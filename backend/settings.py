@@ -50,7 +50,7 @@ ASGI_APPLICATION = 'backend.asgi.application'
 AUTH_USER_MODEL = 'user.CustomUser'
 
 # Channels configuration
-"""CHANNEL_LAYERS = {
+CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
@@ -59,9 +59,9 @@ AUTH_USER_MODEL = 'user.CustomUser'
             ]
         },
     },
-}"""
+}
 # Channels configuration for Redis
-CHANNEL_LAYERS = {
+"""CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
@@ -69,7 +69,7 @@ CHANNEL_LAYERS = {
         },
     },
 }
-
+"""
 import os
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
