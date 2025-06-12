@@ -50,7 +50,7 @@ ASGI_APPLICATION = 'backend.asgi.application'
 AUTH_USER_MODEL = 'user.CustomUser'
 
 # Channels configuration
-CHANNEL_LAYERS = {
+"""CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
@@ -59,7 +59,21 @@ CHANNEL_LAYERS = {
             ]
         },
     },
+}"""
+#upstash
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [{
+                "address": "rediss://default:AT5qAAIjcDE1YzEwMTRiYTE3NTM0MjhhYTlmNmE3ZjZhZTczZGU3ZXAxMA@driving-cockatoo-15978.upstash.io:6379",
+                "ssl": True
+            }],
+        },
+    },
 }
+
 
 
 # Channels configuration for Redis
