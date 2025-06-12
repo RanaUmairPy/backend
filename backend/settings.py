@@ -55,11 +55,12 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [
-                "rediss://:AaLAAAIjcDFkMWFjZDYxNjdlMTg0OGI5OTUzYzRjYzg3MmYxYmQ4YXAxMA@fine-kiwi-41664.upstash.io:6379"
+                "rediss://redis-16662.c321.us-east-1-2.ec2.redns.redis-cloud.com:16662"
             ]
         },
     },
 }
+
 # Channels configuration for Redis
 """CHANNEL_LAYERS = {
     "default": {
