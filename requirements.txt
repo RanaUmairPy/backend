@@ -6,4 +6,4 @@ asgiref>=3.0
 redis>=4.0
 djangorestframework
 django-cors-headers
-djangorestframework-simplejwt==<version>
+djangorestframework-simplejwt>=5.0.0
