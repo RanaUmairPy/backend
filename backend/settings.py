@@ -68,8 +68,7 @@ CHANNEL_LAYERS = {
         "CONFIG": {
             "hosts": [{
                 "address": "rediss://default:AT5qAAIjcDE1YzEwMTRiYTE3NTM0MjhhYTlmNmE3ZjZhZTczZGU3ZXAxMA@driving-cockatoo-15978.upstash.io:6379",
-                "ssl": True,
-                "ssl_cert_reqs": None, 
+                
             }],
         },
     },
