@@ -55,7 +55,7 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [
-                "rediss://redis-16662.c321.us-east-1-2.ec2.redns.redis-cloud.com:16662"
+                "redis://redis-16662.c321.us-east-1-2.ec2.redns.redis-cloud.com:16662"
             ]
         },
     },
