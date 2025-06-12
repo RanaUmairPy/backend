@@ -55,11 +55,12 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [
-                "redis://redis-16662.c321.us-east-1-2.ec2.redns.redis-cloud.com:16662"
+                "redis://default:usBS4QJd1VkzdFlc3FAB2hWKV8nAUXIQ@redis-16662.c321.us-east-1-2.ec2.redns.redis-cloud.com:16662"
             ]
         },
     },
 }
+
 
 # Channels configuration for Redis
 """CHANNEL_LAYERS = {
