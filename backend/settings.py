@@ -137,12 +137,26 @@ REST_FRAMEWORK = {
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
+"""DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
+}"""
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'defaultdb',  # Your database name
+        'USER': 'avnadmin',  # Your username
+        'PASSWORD': 'AVNS_9MLHjLDbBJdWuJZyr1w',  # Your password
+        'HOST': 'mysql-1f71f1e7-umairsaeed320-5b63.d.aivencloud.com',  # Your host
+        'PORT': '27629',  # Your port
+        'OPTIONS': {
+            'ssl_mode': 'REQUIRED',  # Required SSL mode
+        }
+    }
 }
+
 
 
 
