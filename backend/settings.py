@@ -58,7 +58,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 AUTH_USER_MODEL = 'user.CustomUser'
 
 # Channels configuration
-"""CHANNEL_LAYERS = {
+CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
@@ -67,10 +67,10 @@ AUTH_USER_MODEL = 'user.CustomUser'
             ]
         },
     },
-}"""
+}
 #upstash
 
-CHANNEL_LAYERS = {
+"""CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
@@ -80,7 +80,7 @@ CHANNEL_LAYERS = {
             }],
         },
     },
-}
+}"""
 
 
 
