@@ -9,3 +9,5 @@ django-cors-headers
 redis[asyncio]==5.0.1
 djangorestframework-simplejwt>=5.0.0
 Pillow>=10.0.0
+mysqlclient==2.2.0  # Or use pymysql if mysqlclient fails
+
