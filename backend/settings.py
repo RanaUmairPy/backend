@@ -46,7 +46,14 @@ INSTALLED_APPS = [
 ]
 #Daphane
 ASGI_APPLICATION = 'backend.asgi.application'
+# settings.py
 
+import os  # Make sure this is at the top of the file
+
+STATIC_URL = '/static/'
+
+# ✅ Add this line below STATIC_URL
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 AUTH_USER_MODEL = 'user.CustomUser'
 
 # Channels configuration
