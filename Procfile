@@ -1,1 +1,1 @@
-web: daphne -b 0.0.0.0 -p 8000 Dhpane.asgi:application
+web: daphne -b 0.0.0.0 -p 8000 backend.asgi:application
