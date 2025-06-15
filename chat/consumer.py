@@ -82,11 +82,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
             text=text,
             filename=filename or "",
         )
-
     @database_sync_to_async
     def send_onesignal(self, player_id, title, body):
+        url = "https://api.onesignal.com/notifications"
         headers = {
-            "Authorization": "os_v2_app_l573ef6k6rha5gvgfdtt56lq7fmfpcp4wi5et5evzfzvraoabjbw2tv2hkgdesb7mthwqnvyuf544iqkeke4mvnbqm2i43bicutz3gi",
+            "Authorization": "os_v2_app_l573ef6k6rha5gvgfdtt56lq7fmfpcp4wi5et5evzfzvraoabjbw4oe66zvfdt5ccwjod6w7qsrzutmvldwoz5morxmb4qsjyjr5dxi",
             "Content-Type": "application/json"
         }
         payload = {
@@ -96,6 +96,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             "contents": {"en": body},
             "data": {"screen": "chat"}
         }
-        requests.post("https://onesignal.com/api/v1/notifications", headers=headers, data=json.dumps(payload))
-        
-        print("OneSignal status:", response.status_code, response.text)
+    
+        print("OneSignal POST URL:", url)
+        print("OneSignal Headers:", headers)
+        print("OneSignal Payload:", payload)
+    
+        response = requests.post(url, headers=headers, json=payload)
+        print("OneSignal response:", response.status_code, response.text)
