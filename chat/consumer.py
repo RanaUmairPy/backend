@@ -86,11 +86,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def send_onesignal(self, player_id, title, body):
         headers = {
-            "Authorization": "5f7fb217-caf4-4e0e-9aa6-28e73ef970f9",
+            "Authorization": "os_v2_app_l573ef6k6rha5gvgfdtt56lq7fmfpcp4wi5et5evzfzvraoabjbw2tv2hkgdesb7mthwqnvyuf544iqkeke4mvnbqm2i43bicutz3gi",
             "Content-Type": "application/json"
         }
         payload = {
-            "app_id": "YOUR_ONESIGNAL_APP_ID",
+            "app_id": "5f7fb217-caf4-4e0e-9aa6-28e73ef970f9",
             "include_player_ids": [player_id],
             "headings": {"en": title},
             "contents": {"en": body},
