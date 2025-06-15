@@ -97,3 +97,5 @@ class ChatConsumer(AsyncWebsocketConsumer):
             "data": {"screen": "chat"}
         }
         requests.post("https://onesignal.com/api/v1/notifications", headers=headers, data=json.dumps(payload))
+        response = requests.post(..., json=payload, headers=headers)
+        print("OneSignal status:", response.status_code, response.text)
