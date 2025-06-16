@@ -5,7 +5,11 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.conf import settings
 
-r = redis.Redis()  # Using default Redis connection
+import os
+
+REDIS_URL = "redis://default:usBS4QJd1VkzdFlc3FAB2hWKV8nAUXIQ@redis-16662.c321.us-east-1-2.ec2.redns.redis-cloud.com:16662"
+r = redis.Redis.from_url(REDIS_URL)
+
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
