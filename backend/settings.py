@@ -28,7 +28,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
-
+ONESIGNAL_APP_ID = '5f7fb217-caf4-4e0e-9aa6-28e73ef970f9'
+ONESIGNAL_REST_API_KEY = 'os_v2_app_l573ef6k6rha5gvgfdtt56lq7fmfpcp4wi5et5evzfzvraoabjb3anlfaovw76ljosc7ywwqqslko6c4zwp4snmmnbylchb57rlcyka'
 # Application definition
 
 INSTALLED_APPS = [
