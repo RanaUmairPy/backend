@@ -11,5 +11,7 @@ djangorestframework-simplejwt>=5.0.0
 Pillow>=10.0.0
 mysqlclient==2.2.0  # Or use pymysql if mysqlclient fails
 requests>=2.0.0
+psycopg2-binary
+
 
 
