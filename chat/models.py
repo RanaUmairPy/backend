@@ -31,3 +31,12 @@ class Player(models.Model):
 
     def __str__(self):
         return f'{self.user.username} - {self.player_id}'
+
+class OneSignal(models.Model):
+    user = models.ForeignKeyField(User, primary_key=True, on_delete=models.CASCADE)
+    player_id = models.CharField(max_length=100, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.player_id}"
