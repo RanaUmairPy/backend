@@ -16,7 +16,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 APPEND_SLASH = False
-
+FCM_SERVER_KEY = "BKM1av-IBAu2ORof5Du6PlCvbg9pJMLPvDhhFWcmE0TuQj7vd2Sr2S2jHBNrqOwqS0xlIJ7Qt7Dr-8GuyFy07JY"
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
