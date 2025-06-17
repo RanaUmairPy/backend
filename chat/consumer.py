@@ -96,8 +96,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
     def is_user_online(self, user_id):
         return r.sismember("online_users", user_id)
 
-   @database_sync_to_async
-   def send_push_notification(self, user_id, message):
+    @database_sync_to_async
+    def send_push_notification(self, user_id, message):
         from .models import Profile  # assuming FCM token is stored in a Profile model
     
         try:
