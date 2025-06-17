@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Message
 from .models import OneSignal
+from user.models import CustomUser
 class MessageSerializer(serializers.ModelSerializer):
     sender_id = serializers.IntegerField(source='sender.id')
     receiver_id = serializers.IntegerField(source='receiver.id')
@@ -27,7 +28,7 @@ class OneSignalSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user_id = validated_data.pop('user_id')
-        user = User.objects.get(id=user_id)
+        user = CustomUser.objects.get(id=user_id)
         onesignal, created = OneSignal.objects.update_or_create(
             user=user,
             defaults={'player_id': validated_data['player_id']}
