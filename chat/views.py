@@ -6,7 +6,7 @@ from .serializer import MessageSerializer
 from .models import Player
 from rest_framework import viewsets
 from .models import OneSignal
-from .serializers import OneSignalSerializer
+from .serializer import OneSignalSerializer
 
 @api_view(['GET'])
 def chat_history(request, user1_id, user2_id):
