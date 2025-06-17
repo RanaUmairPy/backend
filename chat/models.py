@@ -26,7 +26,7 @@ class Message(models.Model):
         }
         
 class Player(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     player_id = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
