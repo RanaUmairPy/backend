@@ -95,38 +95,3 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def is_user_online(self, user_id):
         return r.sismember("online_users", user_id)
-
-    @database_sync_to_async
-    def send_push_notification(self, user_id, message):
-        from .models import Profile  # assuming FCM token is stored in a Profile model
-    
-        try:
-            user_profile = Profile.objects.get(user_id=user_id)
-            fcm_token = user_profile.fcm_token
-    
-            if not fcm_token:
-                print(f"[FCM] ❌ No FCM token for user {user_id}")
-                return
-    
-            headers = {
-                "Authorization": f"key={settings.FCM_SERVER_KEY}",  # Set in settings.py
-                "Content-Type": "application/json"
-            }
-    
-            payload = {
-                "to": fcm_token,
-                "notification": {
-                    "title": "New Message",
-                    "body": message,
-                },
-                "priority": "high"
-            }
-    
-            response = requests.post("https://fcm.googleapis.com/fcm/send", headers=headers, json=payload)
-            print("📬 FCM Response:", response.status_code, response.text)
-    
-        except Profile.DoesNotExist:
-            print(f"[FCM] ❌ Profile not found for user {user_id}")
-        except Exception as e:
-            print("[FCM] ❌ Push notification error:", e)
-        
