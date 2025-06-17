@@ -98,24 +98,26 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def send_push_notification(self, user_id, message):
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
+        from .models import Player
         try:
-            user = User.objects.get(id=user_id)
-
+            player = Player.objects.get(user_id=user_id)
             headers = {
                 "Authorization": f"Basic {settings.ONESIGNAL_REST_API_KEY}",
                 "Content-Type": "application/json"
             }
-
+    
             payload = {
                 "app_id": settings.ONESIGNAL_APP_ID,
-                "include_external_user_ids": [str(user.id)],
+                "include_player_ids": [player.player_id],  # use player_id now
                 "contents": {"en": message},
                 "headings": {"en": "New Message"},
             }
-
+    
             response = requests.post("https://api.onesignal.com/notifications", json=payload, headers=headers)
             print("Push response:", response.status_code, response.json())
+    
+        except Player.DoesNotExist:
+            print(f"[OneSignal] No player ID for user {user_id}")
         except Exception as e:
             print("Push notification error:", e)
+    
