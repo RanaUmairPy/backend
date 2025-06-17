@@ -96,28 +96,37 @@ class ChatConsumer(AsyncWebsocketConsumer):
     def is_user_online(self, user_id):
         return r.sismember("online_users", user_id)
 
-    @database_sync_to_async
-    def send_push_notification(self, user_id, message):
-        from .models import Player
+   @database_sync_to_async
+   def send_push_notification(self, user_id, message):
+        from .models import Profile  # assuming FCM token is stored in a Profile model
+    
         try:
-            player = Player.objects.get(user_id=user_id)
+            user_profile = Profile.objects.get(user_id=user_id)
+            fcm_token = user_profile.fcm_token
+    
+            if not fcm_token:
+                print(f"[FCM] ❌ No FCM token for user {user_id}")
+                return
+    
             headers = {
-                "Authorization": f"Basic {settings.ONESIGNAL_REST_API_KEY}",
+                "Authorization": f"key={settings.FCM_SERVER_KEY}",  # Set in settings.py
                 "Content-Type": "application/json"
             }
     
             payload = {
-                "app_id": settings.ONESIGNAL_APP_ID,
-                "include_player_ids": [player.player_id],  # use player_id now
-                "contents": {"en": message},
-                "headings": {"en": "New Message"},
+                "to": fcm_token,
+                "notification": {
+                    "title": "New Message",
+                    "body": message,
+                },
+                "priority": "high"
             }
     
-            response = requests.post("https://api.onesignal.com/notifications", json=payload, headers=headers)
-            print("Push response:", response.status_code, response.json())
+            response = requests.post("https://fcm.googleapis.com/fcm/send", headers=headers, json=payload)
+            print("📬 FCM Response:", response.status_code, response.text)
     
-        except Player.DoesNotExist:
-            print(f"[OneSignal] No player ID for user {user_id}")
+        except Profile.DoesNotExist:
+            print(f"[FCM] ❌ Profile not found for user {user_id}")
         except Exception as e:
-            print("Push notification error:", e)
-    
+            print("[FCM] ❌ Push notification error:", e)
+        
