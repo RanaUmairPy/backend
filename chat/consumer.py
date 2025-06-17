@@ -4,12 +4,10 @@ import redis
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.conf import settings
-
 import os
 
 REDIS_URL = "redis://default:usBS4QJd1VkzdFlc3FAB2hWKV8nAUXIQ@redis-16662.c321.us-east-1-2.ec2.redns.redis-cloud.com:16662"
 r = redis.Redis.from_url(REDIS_URL)
-
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -57,7 +55,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         is_online = await self.is_user_online(receiver_id)
         if not is_online:
-            await self.send_push_notification(receiver_id, message)
+            sender = await self.get_user(sender_id)
+            await self.send_push_notification(receiver_id, message, sender.username)
 
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({
@@ -95,3 +94,50 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def is_user_online(self, user_id):
         return r.sismember("online_users", user_id)
+
+    @database_sync_to_async
+    def get_user(self, user_id):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        return User.objects.get(id=user_id)
+
+    @database_sync_to_async
+    def get_player_id(self, user_id):
+        from .models import OneSignal
+        try:
+            onesignal = OneSignal.objects.get(user_id=user_id)
+            return onesignal.player_id
+        except OneSignal.DoesNotExist:
+            return None
+
+    async def send_push_notification(self, receiver_id, message, sender_username):
+        player_id = await self.get_player_id(receiver_id)
+        if not player_id:
+            print(f"[OneSignal] No player ID found for user {receiver_id}")
+            return
+
+        onesignal_app_id = "5f7fb217-caf4-4e0e-9aa6-28e73ef970f9"
+        onesignal_api_key = os.getenv("ONESIGNAL_API_KEY", "your_onesignal_api_key")  # Set in environment
+
+        headers = {
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": f"Basic {onesignal_api_key}",
+        }
+
+        payload = {
+            "app_id": onesignal_app_id,
+            "include_player_ids": [player_id],
+            "contents": {"en": f"{sender_username}: {message[:100]}"},  # Limit message length
+            "headings": {"en": f"New Message from {sender_username}"},
+            "data": {"receiver_id": receiver_id, "sender_id": self.scope["user"].id},
+        }
+
+        try:
+            response = requests.post(
+                "https://onesignal.com/api/v1/notifications",
+                headers=headers,
+                data=json.dumps(payload),
+            )
+            print(f"[OneSignal] Notification sent to player {player_id}: Status {response.status_code}, Response {response.json()}")
+        except Exception as e:
+            print(f"[OneSignal] Error sending notification to player {player_id}: {e}")
