@@ -21,7 +21,7 @@ class OneSignalSerializer(serializers.ModelSerializer):
 
     def validate_user_id(self, value):
         try:
-            User.objects.get(id=value)
+             CustomUser.objects.get(id=value)
         except User.DoesNotExist:
             raise serializers.ValidationError("User does not exist.")
         return value
