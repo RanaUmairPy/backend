@@ -4,7 +4,6 @@ import redis
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.conf import settings
-import os
 
 REDIS_URL = "redis://default:usBS4QJd1VkzdFlc3FAB2hWKV8nAUXIQ@redis-16662.c321.us-east-1-2.ec2.redns.redis-cloud.com:16662"
 r = redis.Redis.from_url(REDIS_URL)
@@ -17,7 +16,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
-        # Mark user online
         user = self.scope["user"]
         if user.is_authenticated:
             await self.mark_user_online(user.id)
@@ -25,7 +23,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
-        # Mark user offline
         user = self.scope["user"]
         if user.is_authenticated:
             await self.mark_user_offline(user.id)
@@ -33,19 +30,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
         message = data.get('message', '')
-        file = data.get('file')
+        file_url = data.get('file')  # Expecting file_url from upload
         filename = data.get('filename')
         sender_id = data.get('sender_id')
         receiver_id = data.get('receiver_id')
 
-        msg_obj = await self.save_message(sender_id, receiver_id, message, file, filename)
+        msg_obj = await self.save_message(sender_id, receiver_id, message, file_url, filename)
 
         await self.channel_layer.group_send(
             self.room_group_name,
             {
                 'type': 'chat_message',
                 'message': msg_obj.text,
-                'file': msg_obj.file_url() if hasattr(msg_obj, "file_url") else None,
+                'file': msg_obj.file_url(),
                 'filename': msg_obj.filename,
                 'sender_id': msg_obj.sender.id,
                 'receiver_id': msg_obj.receiver.id,
@@ -69,7 +66,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         }))
 
     @database_sync_to_async
-    def save_message(self, sender_id, receiver_id, text, file, filename):
+    def save_message(self, sender_id, receiver_id, text, file_url, filename):
         from django.contrib.auth import get_user_model
         from .models import Message
         User = get_user_model()
@@ -117,7 +114,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
         onesignal_app_id = "5f7fb217-caf4-4e0e-9aa6-28e73ef970f9"
-        onesignal_api_key = "os_v2_app_l573ef6k6rha5gvgfdtt56lq7fmfpcp4wi5et5evzfzvraoabjb3anlfaovw76ljosc7ywwqqslko6c4zwp4snmmnbylchb57rlcyka"
+        onesignal_api_key = os.getenv("ONESIGNAL_API_KEY", "your-api-key")  # Use env variable
 
         headers = {
             "Content-Type": "application/json; charset=utf-8",
@@ -127,7 +124,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         payload = {
             "app_id": onesignal_app_id,
             "include_player_ids": [player_id],
-            "contents": {"en": f"{sender_username}: {message[:100]}"},  # Limit message length
+            "contents": {"en": f"{sender_username}: {message[:100]}"},
             "headings": {"en": f"New Message from {sender_username}"},
             "data": {"receiver_id": receiver_id, "sender_id": self.scope["user"].id},
         }
