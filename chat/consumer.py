@@ -1,6 +1,7 @@
 import json
 import requests
 import redis
+import os  # Added for future extensibility
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.conf import settings
@@ -30,12 +31,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
         message = data.get('message', '')
-        file_url = data.get('file')  # Expecting file_url from upload
+        file_id = data.get('file_id')  # Expecting message ID from file upload
         filename = data.get('filename')
         sender_id = data.get('sender_id')
         receiver_id = data.get('receiver_id')
 
-        msg_obj = await self.save_message(sender_id, receiver_id, message, file_url, filename)
+        msg_obj = await self.save_message(sender_id, receiver_id, message, file_id, filename)
 
         await self.channel_layer.group_send(
             self.room_group_name,
@@ -66,19 +67,38 @@ class ChatConsumer(AsyncWebsocketConsumer):
         }))
 
     @database_sync_to_async
-    def save_message(self, sender_id, receiver_id, text, file_url, filename):
+    def save_message(self, sender_id, receiver_id, text, file_id, filename):
         from django.contrib.auth import get_user_model
         from .models import Message
         User = get_user_model()
         sender = User.objects.get(id=sender_id)
         receiver = User.objects.get(id=receiver_id)
-        msg = Message.objects.create(
-            sender=sender,
-            receiver=receiver,
-            text=text,
-            filename=filename or "",
-        )
-        return msg
+
+        if file_id:
+            # Retrieve the message created during file upload
+            try:
+                msg = Message.objects.get(id=file_id, sender_id=sender_id)
+                msg.receiver = receiver
+                msg.text = text
+                msg.filename = filename or msg.filename or ""
+                msg.save()
+                return msg
+            except Message.DoesNotExist:
+                # Fallback: Create a new message if file_id is invalid
+                return Message.objects.create(
+                    sender=sender,
+                    receiver=receiver,
+                    text=text,
+                    filename=filename or "",
+                )
+        else:
+            # Create a new message without file
+            return Message.objects.create(
+                sender=sender,
+                receiver=receiver,
+                text=text,
+                filename=filename or "",
+            )
 
     @database_sync_to_async
     def mark_user_online(self, user_id):
@@ -114,7 +134,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
         onesignal_app_id = "5f7fb217-caf4-4e0e-9aa6-28e73ef970f9"
-        onesignal_api_key = "os_v2_app_l573ef6k6rha5gvgfdtt56lq7fmfpcp4wi5et5evzfzvraoabjb3anlfaovw76ljosc7ywwqqslko6c4zwp4snmmnbylchb57rlcyka"
+        onesignal_api_key = "os_v2_app_l573ef6k6rha5gvgfdtt56rq7fmfpcp4wi5et5evzfzvraoabjb3anlfaovw76ljosc7ywwqqslko6c4zwp4snmmnbylchb57rlcyka"
 
         headers = {
             "Content-Type": "application/json; charset=utf-8",
@@ -135,6 +155,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 headers=headers,
                 data=json.dumps(payload),
             )
-            print(f"[OneSignal] Notification sent to player {player_id}: Status {response.status_code}, Response {response.json()}")
+            print(f"[OneSignal] Notification sent to player {player_id}: Status {response.statusCode}, Response {response.json()}")
         except Exception as e:
             print(f"[OneSignal] Error sending notification to player {player_id}: {e}")
