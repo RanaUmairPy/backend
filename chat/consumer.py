@@ -4,10 +4,10 @@ import redis
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.conf import settings
-import os
 
 REDIS_URL = "redis://default:usBS4QJd1VkzdFlc3FAB2hWKV8nAUXIQ@redis-16662.c321.us-east-1-2.ec2.redns.redis-cloud.com:16662"
 r = redis.Redis.from_url(REDIS_URL)
+
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -17,18 +17,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
-        # Mark user online
         user = self.scope["user"]
         if user.is_authenticated:
             await self.mark_user_online(user.id)
+            await self.mark_user_in_room(user.id, self.room_name)
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
-        # Mark user offline
         user = self.scope["user"]
         if user.is_authenticated:
             await self.mark_user_offline(user.id)
+            await self.mark_user_out_of_room(user.id, self.room_name)
 
     async def receive(self, text_data):
         data = json.loads(text_data)
@@ -53,8 +53,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }
         )
 
-        is_online = await self.is_user_online(receiver_id)
-        if not is_online:
+        # Only send push if receiver is NOT in this room
+        receiver_in_room = await self.is_user_in_room(receiver_id, self.room_name)
+        if not receiver_in_room:
             sender = await self.get_user(sender_id)
             await self.send_push_notification(receiver_id, message, sender.username)
 
@@ -96,6 +97,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
         return r.sismember("online_users", user_id)
 
     @database_sync_to_async
+    def mark_user_in_room(self, user_id, room_name):
+        r.sadd(f"room_users:{room_name}", user_id)
+
+    @database_sync_to_async
+    def mark_user_out_of_room(self, user_id, room_name):
+        r.srem(f"room_users:{room_name}", user_id)
+
+    @database_sync_to_async
+    def is_user_in_room(self, user_id, room_name):
+        return r.sismember(f"room_users:{room_name}", user_id)
+
+    @database_sync_to_async
     def get_user(self, user_id):
         from django.contrib.auth import get_user_model
         User = get_user_model()
@@ -127,7 +140,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         payload = {
             "app_id": onesignal_app_id,
             "include_player_ids": [player_id],
-            "contents": {"en": f"{sender_username}: {message[:100]}"},  # Limit message length
+            "contents": {"en": f"{sender_username}: {message[:100]}"},
             "headings": {"en": f"New Message from {sender_username}"},
             "data": {"receiver_id": receiver_id, "sender_id": self.scope["user"].id},
         }
@@ -138,6 +151,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 headers=headers,
                 data=json.dumps(payload),
             )
-            print(f"[OneSignal] Notification sent to player {player_id}: Status {response.status_code}, Response {response.json()}")
+            print(f"[OneSignal] Notification sent to player {player_id}: "
+                  f"Status {response.status_code}, Response {response.json()}")
         except Exception as e:
             print(f"[OneSignal] Error sending notification to player {player_id}: {e}")
