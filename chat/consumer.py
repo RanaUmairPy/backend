@@ -114,7 +114,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
         onesignal_app_id = "5f7fb217-caf4-4e0e-9aa6-28e73ef970f9"
-        onesignal_api_key = os.getenv("ONESIGNAL_API_KEY", "your-api-key")  # Use env variable
+        onesignal_api_key = "os_v2_app_l573ef6k6rha5gvgfdtt56lq7fmfpcp4wi5et5evzfzvraoabjb3anlfaovw76ljosc7ywwqqslko6c4zwp4snmmnbylchb57rlcyka"
 
         headers = {
             "Content-Type": "application/json; charset=utf-8",
