@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets
 from django.http import HttpResponse, Http404
 from .models import Message, OneSignal
-from .serializers import MessageSerializer, OneSignalSerializer
+from .serializer import MessageSerializer, OneSignalSerializer
 
 ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf']
 MAX_SIZE = 5 * 1024 * 1024  # 5MB
