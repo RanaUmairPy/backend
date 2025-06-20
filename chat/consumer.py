@@ -1,9 +1,10 @@
 import json
-import requests
 import redis
+import base64
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.conf import settings
+from django.core.files.base import ContentFile
 import os
 
 REDIS_URL = "redis://default:usBS4QJd1VkzdFlc3FAB2hWKV8nAUXIQ@redis-16662.c321.us-east-1-2.ec2.redns.redis-cloud.com:16662"
@@ -33,12 +34,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
         message = data.get('message', '')
-        file = data.get('file')
+        file_data = data.get('file')  # Base64 encoded file content
         filename = data.get('filename')
         sender_id = data.get('sender_id')
         receiver_id = data.get('receiver_id')
 
-        msg_obj = await self.save_message(sender_id, receiver_id, message, file, filename)
+        msg_obj = await self.save_message(sender_id, receiver_id, message, file_data, filename)
 
         await self.channel_layer.group_send(
             self.room_group_name,
@@ -69,7 +70,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         }))
 
     @database_sync_to_async
-    def save_message(self, sender_id, receiver_id, text, file, filename):
+    def save_message(self, sender_id, receiver_id, text, file_data, filename):
         from django.contrib.auth import get_user_model
         from .models import Message
         User = get_user_model()
@@ -81,6 +82,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
             text=text,
             filename=filename or "",
         )
+        if file_data and filename:
+            # Decode base64 file data and save it
+            try:
+                file_content = base64.b64decode(file_data)
+                msg.file.save(filename, ContentFile(file_content))
+                msg.save()
+            except Exception as e:
+                print(f"Error saving file: {e}")
         return msg
 
     @database_sync_to_async
@@ -127,7 +136,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         payload = {
             "app_id": onesignal_app_id,
             "include_player_ids": [player_id],
-            "contents": {"en": f"{sender_username}: {message[:100]}"},  # Limit message length
+            "contents": {"en": f"{sender_username}: {message[:100]}"},
             "headings": {"en": f"New Message from {sender_username}"},
             "data": {"receiver_id": receiver_id, "sender_id": self.scope["user"].id},
         }
