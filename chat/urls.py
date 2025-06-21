@@ -7,5 +7,5 @@ router.register(r'store_player_id', OneSignalViewSet, basename='store-player-id'
 urlpatterns = [
     path('history/<int:user1_id>/<int:user2_id>/', chat_history),
     path('api/', include(router.urls)),
-    path('get_hms_token/', views.get_hms_token, name='get_hms_token'),
+    path('get_hms_token/',get_hms_token, name='get_hms_token'),
 ]
