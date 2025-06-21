@@ -7,7 +7,7 @@ from rest_framework import viewsets
 from .services import TokenService
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])  # Require authentication
 def chat_history(request, user1_id, user2_id):
     messages = Message.objects.filter(
         sender_id__in=[user1_id, user2_id],
