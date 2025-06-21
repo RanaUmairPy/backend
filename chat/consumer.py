@@ -1,6 +1,7 @@
 import json
 import redis
 import base64
+import request
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.conf import settings
