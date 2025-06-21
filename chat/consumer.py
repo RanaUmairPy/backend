@@ -1,13 +1,11 @@
 import json
 import redis
 import base64
-import requests
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.conf import settings
 from django.core.files.base import ContentFile
-from .services import TokenService
-from datetime import datetime
+import os
 
 REDIS_URL = "redis://default:usBS4QJd1VkzdFlc3FAB2hWKV8nAUXIQ@redis-16662.c321.us-east-1-2.ec2.redns.redis-cloud.com:16662"
 r = redis.Redis.from_url(REDIS_URL)
@@ -16,14 +14,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = f'chat_{self.room_name}'
+
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
+
+        # Mark user online
         user = self.scope["user"]
         if user.is_authenticated:
             await self.mark_user_online(user.id)
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
+        # Mark user offline
         user = self.scope["user"]
         if user.is_authenticated:
             await self.mark_user_offline(user.id)
@@ -31,69 +34,36 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
         message = data.get('message', '')
-        file_data = data.get('file')
+        file_data = data.get('file')  # Base64 encoded file content
         filename = data.get('filename')
         sender_id = data.get('sender_id')
         receiver_id = data.get('receiver_id')
-        action = data.get('action')
 
-        if action == 'start_call':
-            room_id = '68563d93a5ba8326e6eb2dee'  # Your provided Room ID
-            token_service = TokenService()
-            sender_token = token_service.generate_token(sender_id, room_id, role="speaker")
-            receiver_token = token_service.generate_token(receiver_id, room_id, role="speaker")
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    'type': 'call_message',
-                    'action': 'start_call',
-                    'room_id': room_id,
-                    'sender_token': sender_token,
-                    'receiver_token': receiver_token,
-                    'sender_id': sender_id,
-                    'receiver_id': receiver_id,
-                    'timestamp': datetime.now().isoformat(),
-                }
-            )
-            is_online = await self.is_user_online(receiver_id)
-            if not is_online:
-                sender = await self.get_user(sender_id)
-                await self.send_push_notification(receiver_id, "Incoming audio call", sender.username)
-        else:
-            msg_obj = await self.save_message(sender_id, receiver_id, message, file_data, filename)
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    'type': 'chat_message',
-                    'message': msg_obj.text,
-                    'file': msg_obj.file_url() if hasattr(msg_obj, "file_url") else None,
-                    'filename': msg_obj.filename,
-                    'sender_id': msg_obj.sender.id,
-                    'receiver_id': msg_obj.receiver.id,
-                    'timestamp': msg_obj.timestamp.isoformat(),
-                }
-            )
-            is_online = await self.is_user_online(receiver_id)
-            if not is_online:
-                sender = await self.get_user(sender_id)
-                await self.send_push_notification(receiver_id, message, sender.username)
+        msg_obj = await self.save_message(sender_id, receiver_id, message, file_data, filename)
+
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'chat_message',
+                'message': msg_obj.text,
+                'file': msg_obj.file_url() if hasattr(msg_obj, "file_url") else None,
+                'filename': msg_obj.filename,
+                'sender_id': msg_obj.sender.id,
+                'receiver_id': msg_obj.receiver.id,
+                'timestamp': msg_obj.timestamp.isoformat(),
+            }
+        )
+
+        is_online = await self.is_user_online(receiver_id)
+        if not is_online:
+            sender = await self.get_user(sender_id)
+            await self.send_push_notification(receiver_id, message, sender.username)
 
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({
             'message': event.get('message'),
             'file': event.get('file'),
             'filename': event.get('filename'),
-            'sender_id': event.get('sender_id'),
-            'receiver_id': event.get('receiver_id'),
-            'timestamp': event.get('timestamp'),
-        }))
-
-    async def call_message(self, event):
-        await self.send(text_data=json.dumps({
-            'action': event.get('action'),
-            'room_id': event.get('room_id'),
-            'sender_token': event.get('sender_token'),
-            'receiver_token': event.get('receiver_token'),
             'sender_id': event.get('sender_id'),
             'receiver_id': event.get('receiver_id'),
             'timestamp': event.get('timestamp'),
@@ -113,6 +83,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             filename=filename or "",
         )
         if file_data and filename:
+            # Decode base64 file data and save it
             try:
                 file_content = base64.b64decode(file_data)
                 msg.file.save(filename, ContentFile(file_content))
@@ -153,25 +124,68 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not player_id:
             print(f"[OneSignal] No player ID found for user {receiver_id}")
             return
+
         onesignal_app_id = "5f7fb217-caf4-4e0e-9aa6-28e73ef970f9"
         onesignal_api_key = "os_v2_app_l573ef6k6rha5gvgfdtt56lq7fmfpcp4wi5et5evzfzvraoabjb3anlfaovw76ljosc7ywwqqslko6c4zwp4snmmnbylchb57rlcyka"
+
         headers = {
             "Content-Type": "application/json; charset=utf-8",
             "Authorization": f"Basic {onesignal_api_key}",
         }
+
         payload = {
             "app_id": onesignal_app_id,
             "include_player_ids": [player_id],
             "contents": {"en": f"{sender_username}: {message[:100]}"},
-            "headings": {"en": f"New Message or Call from {sender_username}"},
+            "headings": {"en": f"New Message from {sender_username}"},
             "data": {"receiver_id": receiver_id, "sender_id": self.scope["user"].id},
         }
+
         try:
             response = requests.post(
                 "https://onesignal.com/api/v1/notifications",
                 headers=headers,
                 data=json.dumps(payload),
             )
-            print(f"[OneSignal] Notification sent to player {player_id}: Status {response.statusCode}, Response {response.json()}")
+            print(f"[OneSignal] Notification sent to player {player_id}: Status {response.status_code}, Response {response.json()}")
         except Exception as e:
-            print(f"[OneSignal] Error sending notification to player {player_id}: {e}")
+            print(f"[OneSignal] Error sending notification to player {player_id}: {e}")-------------from rest_framework.decorators import api_view,permission_classes
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import Message
+from .serializer import MessageSerializer
+from .models import Player
+from rest_framework import viewsets
+from .models import OneSignal
+from .serializer import OneSignalSerializer
+
+@api_view(['GET'])
+def chat_history(request, user1_id, user2_id):
+    messages = Message.objects.filter(
+        sender_id__in=[user1_id, user2_id],
+        receiver_id__in=[user1_id, user2_id]
+    ).order_by('timestamp')
+    return Response(MessageSerializer(messages, many=True).data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def store_player_id(request):
+    user = request.user
+    player_id = request.data.get('player_id')
+
+    if not player_id:
+        return Response({"error": "player_id is required"}, status=400)
+
+    Player.objects.update_or_create(user=user, defaults={"player_id": player_id})
+    return Response({"status": "Player ID saved"})
+
+
+class OneSignalViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        serializer = OneSignalSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Player ID stored"}, status=201)
+        return Response(serializer.errors, status=400)---------import 'dart:convert';
