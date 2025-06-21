@@ -32,6 +32,13 @@ ONESIGNAL_APP_ID = '5f7fb217-caf4-4e0e-9aa6-28e73ef970f9'
 ONESIGNAL_REST_API_KEY = 'os_v2_app_l573ef6k6rha5gvgfdtt56lq7fmfpcp4wi5et5evzfzvraoabjb3anlfaovw76ljosc7ywwqqslko6c4zwp4snmmnbylchb57rlcyka'
 # Application definition
 
+HMS_APP_ACCESS_KEY = "68525572145cb4e8449afcd9"  # From Developer > Access Credentials
+HMS_APP_SECRET = "f_yesDyJ4nDhlgYMO9DO1r9MwxPhN4I9MDRTajcljhF3icTKgQsWgT_TvdQKe4D4_WXMmR3WTaykpokgz8O4d2lVm8p4i3Fdjto_cknEgFJSplKC3JGtI6FGhYVHpeGI2hhFLDOx4JxtQnxRsYE2OCXIhElXRBTeEEmJIQc_UT4="
+HMS_API_BASE_URL = "https://api.100ms.live/v2"
+HMS_TEMPLATE_ID = "68563d9374147bd574ba4cb3"
+
+
+
 INSTALLED_APPS = [
     'daphne',
     'channels',
