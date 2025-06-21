@@ -5,8 +5,8 @@ from django.conf import settings
 
 class TokenService:
     def __init__(self):
-        self.app_access_key = settings.HMS_APP_ACCESS_KEY  # Set in settings.py
-        self.app_secret = settings.HMS_APP_SECRET  # Set in settings.py
+        self.app_access_key = settings.HMS_APP_ACCESS_KEY
+        self.app_secret = settings.HMS_APP_SECRET
 
     def generate_token(self, user_id, room_id, role="speaker"):
         payload = {
