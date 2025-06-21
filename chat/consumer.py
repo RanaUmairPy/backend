@@ -16,17 +16,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = f'chat_{self.room_name}'
-
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
-
         user = self.scope["user"]
         if user.is_authenticated:
             await self.mark_user_online(user.id)
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
-
         user = self.scope["user"]
         if user.is_authenticated:
             await self.mark_user_offline(user.id)
@@ -45,7 +42,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             token_service = TokenService()
             sender_token = token_service.generate_token(sender_id, room_id, role="speaker")
             receiver_token = token_service.generate_token(receiver_id, room_id, role="speaker")
-
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
@@ -59,7 +55,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'timestamp': datetime.now().isoformat(),
                 }
             )
-
             is_online = await self.is_user_online(receiver_id)
             if not is_online:
                 sender = await self.get_user(sender_id)
@@ -78,7 +73,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'timestamp': msg_obj.timestamp.isoformat(),
                 }
             )
-
             is_online = await self.is_user_online(receiver_id)
             if not is_online:
                 sender = await self.get_user(sender_id)
@@ -159,15 +153,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not player_id:
             print(f"[OneSignal] No player ID found for user {receiver_id}")
             return
-
         onesignal_app_id = "5f7fb217-caf4-4e0e-9aa6-28e73ef970f9"
         onesignal_api_key = "os_v2_app_l573ef6k6rha5gvgfdtt56lq7fmfpcp4wi5et5evzfzvraoabjb3anlfaovw76ljosc7ywwqqslko6c4zwp4snmmnbylchb57rlcyka"
-
         headers = {
             "Content-Type": "application/json; charset=utf-8",
             "Authorization": f"Basic {onesignal_api_key}",
         }
-
         payload = {
             "app_id": onesignal_app_id,
             "include_player_ids": [player_id],
@@ -175,13 +166,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             "headings": {"en": f"New Message or Call from {sender_username}"},
             "data": {"receiver_id": receiver_id, "sender_id": self.scope["user"].id},
         }
-
         try:
             response = requests.post(
                 "https://onesignal.com/api/v1/notifications",
                 headers=headers,
                 data=json.dumps(payload),
             )
-            print(f"[OneSignal] Notification sent to player {player_id}: Status {response.status_code}, Response {response.json()}")
+            print(f"[OneSignal] Notification sent to player {player_id}: Status {response.statusCode}, Response {response.json()}")
         except Exception as e:
             print(f"[OneSignal] Error sending notification to player {player_id}: {e}")
