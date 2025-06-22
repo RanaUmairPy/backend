@@ -1,0 +1,18 @@
+Django>=4.2
+channels>=4.0
+channels_redis>=4.0
+daphne>=4.0
+asgiref>=3.0
+redis>=4.0
+djangorestframework
+django-cors-headers
+redis[asyncio]==5.0.1
+djangorestframework-simplejwt>=5.0.0
+Pillow>=10.0.0
+mysqlclient==2.2.0  # Or use pymysql if mysqlclient fails
+requests>=2.0.0
+psycopg2-binary
+pyjwt>=2.4
+
+
+
